@@ -1,0 +1,6 @@
+git init
+git add filename
+git add .
+git commit -m "My first push"
+git branch -m main
+git remote
