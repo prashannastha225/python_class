@@ -6,6 +6,8 @@ import copy
 pygame.init()
 WIDTH, HEIGHT = 1280, 720
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
+# Create a dedicated display surface to handle clean screen shaking
+display_surface = pygame.Surface((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
 font = pygame.font.SysFont('consolas', 50, bold=True)
 
@@ -22,19 +24,34 @@ ORIGINAL_MAP = [
 TILE_SIZE = 100
 
 def reset_game():
-    global px, py, p_angle, score, game_state, current_map, last_dash, domain_active, shake_timer
+    global px, py, p_angle, score, game_state, current_map, last_dash, domain_active, shake_timer, slash_effects
     px, py, p_angle, score = 150, 150, 0, 0
     last_dash, shake_timer = 0, 0
     domain_active = False
     game_state = "PLAYING"
     current_map = copy.deepcopy(ORIGINAL_MAP)
+    slash_effects = [] # Holds active slash lines for Cleave/Dismantle
 
 reset_game()
 
+def trigger_cleave():
+    """Generates a flurry of sharp, fast slashes across the screen."""
+    global slash_effects
+    for _ in range(5):
+        x1 = random.randint(100, WIDTH - 100)
+        y1 = random.randint(100, HEIGHT - 100)
+        length = random.randint(150, 400)
+        
+        # CHANGED THIS LINE: Gives a completely randomized 360-degree angle
+        angle = random.uniform(0, 2 * math.pi) 
+        
+        x2 = x1 + length * math.cos(angle)
+        y2 = y1 + length * math.sin(angle)
+        slash_effects.append({"start": (x1, y1), "end": (x2, y2), "timer": 6})
+                             
 def cast_rays():
-    # If Domain is active, we use "Cursed Vision" (Infinite FOV feel)
     NUM_RAYS = 120
-    FOV = math.pi / (2 if domain_active else 3) 
+    FOV = math.pi / (1.5 if domain_active else 3) # Wider, more chaotic FOV during domain
     SCALE = WIDTH // NUM_RAYS
     for r in range(NUM_RAYS):
         angle = (p_angle - FOV/2) + r * (FOV / NUM_RAYS)
@@ -45,23 +62,35 @@ def cast_rays():
                 if current_map[row][col] > 0:
                     depth *= math.cos(p_angle - angle)
                     wall_h = 21000 / (depth + 0.0001)
-                    # Domain colors: Black and Deep Red
-                    color = (150, 0, 0) if not domain_active else (50, 0, 0)
-                    if current_map[row][col] == 2: color = (255, 215, 0)
-                    pygame.draw.rect(screen, color, (r * SCALE, (HEIGHT//2)-wall_h//2, SCALE, wall_h))
+                    
+                    # Cursed Energy Colors
+                    if domain_active:
+                        # Dark crimson walls that flicker slightly
+                        color = (random.randint(40, 70), 0, 0)
+                    else:
+                        color = (150, 0, 0)
+                        
+                    if current_map[row][col] == 2: 
+                        color = (255, 215, 0) # Gold Coin walls
+                        
+                    pygame.draw.rect(display_surface, color, (r * SCALE, (HEIGHT//2)-wall_h//2, SCALE, wall_h))
                     break
 
 running = True
 while running:
     now = pygame.time.get_ticks() / 1000.0
     for event in pygame.event.get():
-        if event.type == pygame.QUIT: running = False
+        if event.type == pygame.QUIT: 
+            running = False
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_r: reset_game()
+            if event.key == pygame.K_r: 
+                reset_game()
             if event.key == pygame.K_q and game_state == "PLAYING" and (now - last_dash) > 0.4:
                 px += math.cos(p_angle) * 180
                 py += math.sin(p_angle) * 180
-                last_dash, shake_timer = now, 0.2 # Dash shake
+                last_dash = now
+                shake_timer = 0.25
+                trigger_cleave() # Cleave on dash!
 
     if game_state == "PLAYING":
         keys = pygame.key.get_pressed()
@@ -70,41 +99,62 @@ while running:
         move = 6 if keys[pygame.K_w] else -6 if keys[pygame.K_s] else 0
         nx, ny = px + math.cos(p_angle) * move, py + math.sin(p_angle) * move
         
-        # Simple Collision
+        # Simple Collision Logic
         if current_map[int(ny//TILE_SIZE)][int(nx//TILE_SIZE)] != 1:
             px, py = nx, ny
-        elif not domain_active: game_state = "LOSE"
+        elif not domain_active: 
+            game_state = "LOSE"
 
-        # Coin / Domain Trigger
+        # Coin Tracking / Domain Activation
         cx, cy = int(px//TILE_SIZE), int(py//TILE_SIZE)
         if current_map[cy][cx] == 2:
             score += 1
             current_map[cy][cx] = 0
-            shake_timer = 0.3 # Hit shake
-            if score >= 3: domain_active = True
+            shake_timer = 0.2
+            trigger_cleave() # Slashing animation when ripping apart a cursed object
+            if score >= 3: 
+                domain_active = True
 
-    # --- DRAWING ---
-    # Screen Shake Logic
-    offset = (0,0)
-    if shake_timer > 0:
-        offset = (random.randint(-10, 10), random.randint(-10, 10))
-        shake_timer -= 0.02
-
-    screen.fill((20, 0, 0) if domain_active else (10, 10, 10))
-    temp_surf = pygame.Surface((WIDTH, HEIGHT))
+    # --- DRAWING (RENDER TO VIRTUAL SURFACE FIRST) ---
+    display_surface.fill((25, 5, 5) if domain_active else (15, 15, 15))
     
     cast_rays()
     
-    if domain_active:
-        msg = font.render("DOMAIN EXPANSION", True, (255, 0, 0))
-        screen.blit(msg, (WIDTH//2 - 200, 50))
+    # Continuous Dismantle Slashes inside the Malevolent Shrine
+    if domain_active and game_state == "PLAYING" and random.random() < 0.4:
+        # Glitchy text effect
+        text_color = (255, 0, 0) if random.random() > 0.1 else (255, 255, 255)
+        msg = font.render("DOMAIN EXPANSION: MALEVOLENT SHRINE", True, text_color)
+        display_surface.blit(msg, (WIDTH//2 - msg.get_width()//2, 50))
+        trigger_cleave()
+        shake_timer = 0.15
+
+    # Render Active Slash Animations (Cleave/Dismantle Effects)
+    for slash in slash_effects[:]:
+        # Bright red/white cursed energy cuts
+        color = random.choice([(255, 255, 255), (255, 0, 0), (180, 0, 0)])
+        thickness = random.randint(2, 6)
+        pygame.draw.line(display_surface, color, slash["start"], slash["end"], thickness)
+        slash["timer"] -= 1
+        if slash["timer"] <= 0:
+            slash_effects.remove(slash)
 
     if game_state == "LOSE":
-        msg = font.render("U DED 💀 - Press R", True, "white")
-        screen.blit(msg, (WIDTH//2 - 200, HEIGHT//2))
+        msg = font.render("CLEAVED & DISMANTLED - Press R", True, "white")
+        display_surface.blit(msg, (WIDTH//2 - msg.get_width()//2, HEIGHT//2))
 
-    # Apply Shake
-    screen.blit(screen, offset)
+    # --- SCREEN SHAKE & FINAL BLIT ---
+    offset_x, offset_y = 0, 0
+    if shake_timer > 0:
+        intensity = 15 if domain_active else 8 # Domain makes screen shake violent
+        offset_x = random.randint(-intensity, intensity)
+        offset_y = random.randint(-intensity, intensity)
+        shake_timer -= 0.016 # Roughly tied to 60 FPS delta
+
+    # Clear main screen, then safely blit the display surface with the offset
+    screen.fill((0, 0, 0))
+    screen.blit(display_surface, (offset_x, offset_y))
+    
     pygame.display.flip()
     clock.tick(60)
 

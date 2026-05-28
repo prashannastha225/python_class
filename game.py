@@ -12,7 +12,6 @@ screen.fill((20, 20, 20))
 
 running = True
 while running:
-    # 2. THE BRAIN: This part prevents the "on and on" freezing
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False

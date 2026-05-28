@@ -1,8 +1,18 @@
 import time
+import sys
 import random
 
 # THE TERMINAL OBLIVION SCRIPT 🥀😭
 while True:
+
+    def print_slow(text):
+        """A function to print with a delay for a retro feel"""
+    for character in text:
+        sys.stdout.write(character)
+        sys.stdout.flush()
+        time.sleep(0.03)
+    print()
+
     user_input = input("Critical System Error detected. Repair? (yes/no): ").lower().strip()
     
     if "yes" in user_input:

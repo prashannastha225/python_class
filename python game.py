@@ -44,7 +44,7 @@ while running:
     # C. Update Display
     pygame.display.flip()
     
-    # Keeping it at 120 FPS for that smooth DDR5 feel
-    clock.tick(10000)
+    # Keeping it at 60 FPS
+    clock.tick(60)
 
 pygame.quit()

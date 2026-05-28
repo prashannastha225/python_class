@@ -3,4 +3,4 @@ git add filename
 git add .
 git commit -m "My first push"
 git branch -m main
-git remote
+git remote add origin " *here write the url * "

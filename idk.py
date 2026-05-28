@@ -124,7 +124,7 @@ while running:
         # Shifted text slightly to the right for better centering
         screen.blit(small_font.render(status_text, True, gui_color), (35, 108))
     elif game_state == "LOSE":
-        screen.blit(font.render("U DED 💀", True, "red"), (500, 300))
+        screen.blit(font.render("U DED", True, "red"), (500, 300))
     elif game_state == "WIN":
         screen.blit(font.render("GOAT STATUS!", True, "green"), (450, 300))
 
