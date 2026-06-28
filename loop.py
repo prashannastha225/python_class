@@ -3,8 +3,7 @@
 #         print("@", end="")
 #     print()
 
-name = ["hari","ram"]
-name.sort
+while True:
+    print("i")
 
-name.extend(["hari","ram"])
-
+    

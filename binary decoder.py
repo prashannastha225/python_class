@@ -1,5 +1,5 @@
 #the binary message you want to decode.
-binary_input = "01001000 01100101 01101100 01101100 01101111"
+binary_input = "10001000"
 
 #split the string using spaces to get 8 bit blocks
 binary_list = binary_input.split()
