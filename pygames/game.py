@@ -24,10 +24,8 @@ while running:
         pos = pygame.mouse.get_pos()
         pygame.draw.circle(screen, (255, 255, 255), pos, 10)
 
-    # 4. REFRESH
     pygame.display.flip()
     
-    # 5. BRAKES: This stops the CPU from going crazy
     clock.tick(30) 
 
 pygame.quit()

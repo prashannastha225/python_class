@@ -1,6 +1,5 @@
 import time
 import sys
-import random
 
 # THE TERMINAL OBLIVION SCRIPT 🥀😭
 while True:

@@ -108,7 +108,6 @@ while running:
         dash_ready = (current_time - last_dash_time) > dash_cooldown
         gui_color = (0, 255, 255) if dash_ready else (80, 80, 80)
         
-        # WIDER BOX: Increased width to 300 so the "]" fits inside
         gui_rect = pygame.Rect(20, 100, 300, 50)
         
         # Draw the outline
